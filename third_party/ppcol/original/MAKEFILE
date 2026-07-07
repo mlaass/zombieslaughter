@@ -1,0 +1,229 @@
+############################################################																			 #
+#					PPcol makefile, by Ivan	Baldo.              #
+#	 Based on makefile from	Allegro by Shawn Hargreaves.    #
+#				The 'clean'	and 'uninstall' targets            #
+#			  require rm from	the fileutils package.          #
+#		To	build the documentation	you need makedoc.exe      #
+#		from the Allegro docs directory installed in the     #
+#				  docs directory of this package.              #
+#                                                          #
+############################################################
+# replace this definition if you are using PGCC!
+# PGCC=1
+
+.PHONY: baddjgpp badmakedoc baddjdev badgcc badbnu badmake badtxi badpath badppcol
+
+# check that the DJGPP environment variable is set
+ifndef DJDIR
+baddjgpp:
+	@echo Your DJGPP environment variable is not set correctly!	It should
+	@echo point to the djgpp.env file: see the djgpp readme.1st for details.
+endif
+
+# check that the Makedoc utility is installed
+ifeq ($(wildcard docs/makedoc.exe),)
+badmakedoc:
+	@echo Missing Allegro Makedoc utility! You need to copy the makedoc.exe file from
+	@echo the docs directory of Allegro to the docs directory of this library.
+endif
+
+# check that the djdev package is installed
+ifeq ($(wildcard $(DJDIR)/bin/djasm.exe),)
+baddjdev:
+	@echo Missing djgpp package! You need to install djdev201.zip (or whatever the
+	@echo latest version is). Download this from wherever you got djgpp, and unzip
+	@echo it into the root of your djgpp directory.
+endif
+
+# check that the gcc package is installed
+ifeq ($(wildcard $(DJDIR)/bin/gcc.exe),)
+badgcc:
+	@echo Missing djgpp package! You need to install gcc2721b.zip (or whatever the
+	@echo latest version is). Download this from wherever you got djgpp, and unzip
+	@echo it into the root of your djgpp directory.
+endif
+
+# check that the binutils package is installed
+ifeq ($(wildcard $(DJDIR)/bin/ld.exe),)
+badbnu:
+	@echo Missing djgpp package! You need to install bnu27b.zip (or whatever the
+	@echo latest version is). Download this from wherever you got djgpp, and unzip
+	@echo it into the root of your djgpp directory.
+endif
+
+# check that the make package is installed
+ifeq ($(wildcard $(DJDIR)/bin/make.exe),)
+badmake:
+	@echo Missing djgpp package! You need to install mak3761b.zip (or whatever the
+	@echo latest version is). Download this from wherever you got djgpp, and unzip
+	@echo it into the root of your djgpp directory.
+endif
+
+# check that the texinfo package is installed
+ifeq ($(wildcard $(DJDIR)/bin/makeinfo.exe),)
+badtxi:
+	@echo Missing djgpp package! You need to install txi390b.zip (or whatever the
+	@echo latest version is). Download this from wherever you got djgpp, and unzip
+	@echo it into the root of your djgpp directory. If you do not need the Info
+	@echo documentation, run \"make all\" to ignore this error.
+endif
+
+# check that djgpp/bin is pathed
+ifeq ($(wildcard $(addsuffix /djasm.exe,$(subst ;, ,$(PATH)))),)
+badpath:
+	@echo Your PATH is not set correctly! This must include the
+	@echo djgpp bin directory: see the djgpp readme.1st for details.
+endif
+
+# check that PPCOL has a good directory structure
+ifeq ($(wildcard src/ppcol.h),)
+badppcol:
+	@echo Bad PPCOL installation! You did not preserve the directory structure
+	@echo while unzipping it: did you remember to use the -d flag with pkunzip?
+endif
+
+OBJ = obj
+LIB = lib/libppcol.a
+LIBDEST = $(DJDIR)/lib/libppcol.a
+INCDEST = $(DJDIR)/include/ppcol.h
+DOCDEST = $(DJDIR)/info/ppcol.inf
+DJP = $(DJDIR)/bin/djp.exe
+
+ifeq ($(LFN),y)
+HTML = html
+else
+HTML = htm
+endif
+
+WFLAGS = -Wall -W -Werror -Wno-unused
+
+ifdef DEBUGMODE
+# build a debug version
+OFLAGS = -g3
+LFLAGS =
+
+else
+
+ifdef PROFILEMODE
+# build with profiling information
+ifdef PGCC
+OFLAGS = -pg -mpentium -O6 -ffast-math
+else
+OFLAGS = -pg -m486 -O3 -ffast-math
+endif
+LFLAGS = -pg
+
+else
+
+# build a normal optimised version
+ifdef PGCC
+OFLAGS = -mpentium -O6 -ffast-math -fomit-frame-pointer
+else
+OFLAGS = -m486 -O3 -ffast-math -fomit-frame-pointer
+endif
+
+ifdef SYMBOLMODE
+# keep debug symbols
+LFLAGS = 
+else
+# strip debug symbols
+LFLAGS = -s
+
+endif
+endif
+endif
+
+CFLAGS = -I. -Isrc -I$(OBJ) $(WFLAGS) $(OFLAGS)
+SFLAGS = -I. -Isrc -I$(OBJ) $(WFLAGS)
+
+VPATH = docs examples tests src
+
+PROGRAMS = examples tests
+
+OBJS = ppcol.o ppmaskc.o ppamount.o ppmamoun.o
+
+LIB_OBJS = $(addprefix $(OBJ)/, $(OBJS))
+
+DOCS = ChangeLog.txt docs/changes.$(HTML) \
+       ppcol.txt docs/ppcol.$(HTML) docs/ppcol.txi docs/ppcol.inf
+
+.PRECIOUS: $(OBJ)/%.o
+
+.PHONY: all msg lib install uninstall docs clean veryclean $(PROGRAMS)
+
+all: msg $(LIB) $(PROGRAMS) docs install
+	@echo All done.
+	@echo To use PPCol, #include ppcol.h and link with liballeg.a and libppcol.a.
+	@echo Example command line: gcc foobar.c -o foobar.exe -lalleg -lppcol
+	@echo Enjoy!
+
+msg:
+	@echo Compiling PPCol. Please wait...
+
+lib: $(LIB)
+
+install: $(LIBDEST) $(INCDEST) $(DOCDEST)
+
+docs: $(DOCS)
+
+$(LIBDEST): $(LIB)
+	copy lib\libppcol.a $(subst /,\,$(LIBDEST))
+
+$(INCDEST): src/ppcol.h
+	copy src\ppcol.h $(subst /,\,$(INCDEST))
+
+$(DOCDEST): docs/ppcol.inf
+ifneq ($(wildcard $(DJDIR)/bin/makeinfo.exe),)
+	copy docs\ppcol.inf $(subst /,\,$(DOCDEST))
+else
+	@echo makeinfo not installed: skipping copy of ppcol.inf
+endif
+
+$(OBJ)/%.o: %.c ppcol.h
+	gcc $(CFLAGS) -o $@ -c $<
+
+*/%.exe: $(OBJ)/%.o $(LIB)
+	gcc $(LFLAGS) -o $@ $< $(LIB) -lalleg
+
+docs/%.inf: docs/%.txi
+ifneq ($(wildcard $(DJDIR)/bin/makeinfo.exe),)
+	makeinfo --no-split -o $@ $<
+else
+	@echo makeinfo not installed: skipping generation of ppcol.inf
+endif
+
+docs/%.txi: docs/%._tx docs/makedoc.exe
+	docs/makedoc.exe -texinfo $@ $<
+
+docs/%.$(HTML): docs/%._tx docs/makedoc.exe
+	docs/makedoc.exe -$(HTML) $@ $<
+
+%.txt: docs/%._tx docs/makedoc.exe
+	docs/makedoc.exe -ascii $@ $<
+
+ChangeLog.txt: docs/changes._tx docs/makedoc.exe
+	docs/makedoc.exe -ascii ChangeLog.txt docs/changes._tx
+
+$(LIB): $(LIB_OBJS)
+	ar rs $(LIB) $(LIB_OBJS)
+
+clean:
+	-rm -v obj/*.* lib/*.* docs/*.$(HTML) docs/*.txi docs/*.inf
+
+veryclean: clean
+	-rm -v ChangeLog \
+	examples/*.exe
+
+uninstall:
+	-rm $(LIBDEST)
+	-rm $(INCDEST)
+	-rm $(DOCDEST)
+	@echo All gone!
+
+examples: examples/ex1.exe examples/ex2.exe examples/ex3.exe
+tests: tests/bmark.exe
+
+INTERNAL_DEPS = ppcol.o ppmaskc.o ppamount.o ppmamoun.o
+
+$(addprefix $(OBJ)/, $(INTERNAL_DEPS)): $(INTERNAL_H)
+
