@@ -1,0 +1,69 @@
+
+Postmortem: Zombie Slaughter
+****************************
+
+After spending about 35 hours on the game this weekend I must say, that i'm pretty much satisfied with what I got, but some things didn't work out that good as others, so I'll try to note them down in this small document:
+
+tools used:
+***********
+
+- MSVC.net 2003
+- Paintshop Pro 8
+- Cooledit Pro 2
+- Fruityloops 4
+- Libs: allegro, fblend, ppcol
+
+What went Right:
+****************
+
+1. Controls First
+----------------
+This time I tried to achieve, a controllable game as soon as possible, and did everyting to reach that state as fast as possible. That doesn't mean the controls didn't change afterwards, in fact they were adjusted until minutes before submition. 
+This was important because an action game is pretty much defined by its controls, so if those are not easy and direct the player will get annoyedin the first minutes of play.
+It also gave me the opportunity to play around with the controls and too add the incredibly entertaining doublejump.
+
+2. Incremental Design
+---------------------
+Instead of putting a design doc first and trying to stick to a 'plan' I came up with a rough idea ("Worms in realtime and mouse aiming") and added stuff as I continued, although this method has disadvantages which will come to speak later it keeps your motivation up and makes it possible to detect (design) errors very early. This made it also possible that I didn't produce things that did not make it into the game which happened all the times in the other competitions, where I did the art before I needed it.
+
+3. Being lazy 
+-------------
+I must confess, I was very lazy, but the evil thing is, it even helped me ;). If there were two solutions  i'd have  taken the one which was easier, for example it's much easier to place the items of the hud in a paint programm than in code even though it costs some memory if you save a whole screen bitmap instead of 4-5 32*32 ones, but who does really care about this?
+This philosophy brought also some problems, especially in the later stages of the process.
+I also didn't do animated characters, they are a real pain in the ass to draw and the game didn't need them so much that I could have sacrificed any other feature for them. which brings me to the next point:
+
+4. Focus on gameplay
+--------------------
+I always thought what should I implement next and what is most important to increase the fun-factor.
+( I call that Plosophy "Gameplay first menus later"), because this was a big issue in the earlier competitions, where I had beautiful menu-sytems and cool entity-factorys/handlers and all that stuff but
+not a game. Because a game is defined by its potential for entertainment, and not by its beautiful grafics or elegant code.
+
+5. Things that went good but are not worth a whole paragraph
+------------------------------------------------------------
+verlet:If you dont know verlet integration look it up somewhere, its really easy and solves a lot of problems.
+particles: Everyone loves particle-effects,they are a great way too add more "expression" to your game
+Librarys: I used allegro, fblend and ppcol, I knew them good and so they saved me a lot aof time
+Datafile: I used one single allegro-datafile which made it very easy to add and update content without making the release complicated.
+Preparation: I checked and tested all programms before the comp, so that I could just use them that helped a lot.
+finishing touches: things like the(very well predefined) hiscore, and the menu giave the game a real boost although they woult've been pointless without the good core.
+Sound/music: they add a lot to the game, every minute of recording pays off.
+
+What went Wrong:
+****************
+
+1. Worst code ever
+------------------
+ the game more or less takes place in three different classes, CGrafics, Cgame and CEntity, instead of using polymorphism (which also has its downsides) I chose to do everything as states, which led to big switch statements and an unbelivably ugly code. I also did global variables like these: "int up=0, bul=0, fl=0;" . Ihave no clue what they are for one day after the comp is over :) 
+This Bad Coding behavior had its benefits: fast results, but it was quite a pain when I implemented the dynamite 2 hours before I released the final.
+
+2. Art
+------
+The game is not visually appealing, it has no overall visual style, and poor sprites which are not even animated. If I had set down for some minutes and thought about a visual style maybe that would have helped, but I just added stuff when I needed it so if I should enhance this game in the next week perhaps, then I should really redo all grafics (except the crosshair ;)).
+
+3. Monotonus Enemys
+-------------------
+Not only are they all the same, but they also act really stupid, some more enemys should really be added for a pumped up version of the game
+
+4. Theme
+--------
+although the landscape is random and enemys appear at random places, I would've like to take it a bit further with random comments by the hero for example, but didn't get the time to do it.
