@@ -54,6 +54,17 @@ BITMAP* CGame::GetBitmap(int id)
 
 int CGame::Init(void)
 {
+	// Route Allegro's digi output through the "pulse" ALSA PCM (PulseAudio/
+	// PipeWire) instead of the raw hardware "default" device. On a modern
+	// desktop "default" resolves to dmix, which fails ("unable to create IPC
+	// semaphore") when the display manager already holds the card — so the
+	// original DIGI_AUTODETECT produced no sound at all.
+	// ponytail: hardcoded to "pulse"; a user ~/.allegrorc could override it
+	// only if this went through set_config_file instead of override.
+	{
+		const char *cfg = "[sound]\nalsa_device=pulse\n";
+		override_config_data(cfg, strlen(cfg));
+	}
 	if(install_sound(DIGI_AUTODETECT, MIDI_NONE, NULL)!=0)
 			install_sound(DIGI_NONE, MIDI_NONE, NULL);
 	

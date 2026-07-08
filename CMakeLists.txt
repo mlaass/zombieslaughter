@@ -10,7 +10,12 @@ find_path(ALLEG_INC allegro.h REQUIRED)
 
 # --- game -------------------------------------------------------------------
 file(GLOB GAME_SRC CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
-add_executable(zombieslaughter ${GAME_SRC} third_party/ppcol/ppcol.c)
+# PPCol: the original 1998 pixel-perfect collision sources (bitmap routines),
+# byte-for-byte from third_party/ppcol/original/SRC — the game only calls the
+# two BITMAP-form functions, so the mask sources aren't compiled.
+add_executable(zombieslaughter ${GAME_SRC}
+    third_party/ppcol/ppcol.c
+    third_party/ppcol/ppamount.c)
 target_include_directories(zombieslaughter PRIVATE
     src third_party/ppcol third_party/fblend ${ALLEG_INC})
 target_link_libraries(zombieslaughter ${ALLEG_LIB} m)
