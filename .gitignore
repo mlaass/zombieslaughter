@@ -1,3 +1,6 @@
 build/
 build-dbg/
 hiscore.dat
+web/dist/
+web/assets/data.pak
+web/zombieslaughter-web.zip

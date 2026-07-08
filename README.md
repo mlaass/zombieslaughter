@@ -63,6 +63,57 @@ Dumps 23 bitmaps (24-bit `.bmp`, datafile palette baked in) and 9 samples
 > values and comes out ~4x too dark, so we blit through the palette to a 24-bit
 > bitmap first.
 
+## Web build (Emscripten / WASM)
+
+A browser build lives under `web/` and is what gets uploaded to itch.io. Allegro 4
+has no Emscripten port, so instead of dragging in Allegro 5 + Allegro Legacy, `web/`
+provides a small Allegro-4 compatibility shim over SDL3 (a first-class Emscripten
+port). It's compiled *instead of* `<allegro.h>` for the web only — native builds are
+untouched.
+
+```
+web/
+  allegro.h         drop-in <allegro.h>: only the ~35 calls this game makes
+  alleg_compat.cpp  software rasterizer (BITMAP = 32-bit buffer) + SDL3 window/
+                    audio + HTML5 keyboard/mouse; drives the emscripten main loop
+  shell.html        itch-friendly page (black bg, pixelated canvas)
+  build.sh          the emcc invocation
+  assets/data.pak   baked datafile (git-ignored; regenerate with pak_build)
+```
+
+Build it (needs [emsdk](https://emscripten.org) on PATH and a native build first
+for `pak_build`):
+
+```sh
+cmake --build build -j                                        # gives build/pak_build
+./build/pak_build original/ZombieSlaughter/data.dat web/assets/data.pak
+source /path/to/emsdk/emsdk_env.sh
+./web/build.sh                                                # -> web/dist/
+```
+
+Then zip the **contents** of `web/dist/` (`index.html`, `.js`, `.wasm`, `.data`)
+and upload to itch.io as an HTML5 game (set `index.html` as the entry, enable SPA).
+
+How it works:
+
+- **Datafile.** The web build can't parse Allegro's `.dat` format, so `pak_build`
+  (native, real Allegro) bakes `data.dat` once into `web/assets/data.pak`: bitmaps
+  as 32-bit pixels (magenta = transparent), fonts as rasterized glyph atlases,
+  samples as s16 PCM. The shim's `load_datafile` just reads that blob.
+- **Everything is 32-bit.** `set_color_depth` is ignored; all `BITMAP`s are
+  `0x00RRGGBB` with `0xFF00FF` as the mask colour. PPCol runs unchanged — it only
+  needs `BITMAP::w/h/line[]`, which the shim provides, and takes its depth-32 path.
+- **Main loop.** The blocking `CGame::Loop` is bypassed under `__EMSCRIPTEN__`;
+  `main.cpp` registers an `emscripten_set_main_loop` callback that pumps input,
+  advances the same fixed-timestep accumulator, and draws one frame.
+- **Input.** Keyboard goes through Emscripten's HTML5 callbacks on the document
+  (SDL's canvas-focus keyboard capture is unreliable); mouse/aim through SDL events
+  mapped to logical 640×480 coords.
+- **Audio.** A tiny software mixer (16 voices, per-voice vol/pan/pitch/loop) feeds an
+  SDL3 audio stream; it resumes on the first key/mouse event (browser autoplay rule).
+- **Not persisted:** high scores write to `hiscore.dat` in the in-memory MEMFS, so
+  they reset on reload. Add IDBFS + a sync if that ever matters.
+
 ## Porting notes
 
 - **Allegro 4, not 5.** The code is Allegro 4.1; Ubuntu ships Allegro 4.4

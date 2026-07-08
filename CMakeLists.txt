@@ -31,3 +31,10 @@ add_custom_command(TARGET zombieslaughter POST_BUILD
 add_executable(dat_extract tools/dat_extract.c)
 target_include_directories(dat_extract PRIVATE ${ALLEG_INC})
 target_link_libraries(dat_extract ${ALLEG_LIB} m)
+
+# --- web asset baker --------------------------------------------------------
+# Decodes data.dat -> web/assets/data.pak (32-bit bitmaps, rasterized fonts,
+# s16 PCM) for the Emscripten build, which has no Allegro to parse the datafile.
+add_executable(pak_build tools/pak_build.c)
+target_include_directories(pak_build PRIVATE ${ALLEG_INC})
+target_link_libraries(pak_build ${ALLEG_LIB} m)

@@ -4,6 +4,21 @@
 #include "grafics.h"
 #include "game.h"
 #include "random.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+extern volatile int tick_counter;
+static int g_step, g_prev, g_accum;
+static void web_frame()
+{
+	al_web_pump();                       // SDL events -> input + tick_counter
+	int now = tick_counter;
+	g_accum += now - g_prev; g_prev = now;
+	if (g_accum > 250) g_accum = 250;
+	while (g_accum >= g_step && !GAME->m_exit) { GAME->Update(g_step); g_accum -= g_step; }
+	GAME->Draw();
+	if (GAME->m_exit) emscripten_cancel_main_loop();
+}
+#endif
 int c=0;
 bool check(int argc, const char *argv[], char *str)
 {
@@ -35,7 +50,14 @@ int main(int argc, const  char *argv[])
 		fps=atoi(argv[c+1]);
 
 	GAME->Init();
+#ifdef __EMSCRIPTEN__
+	g_step = fps>0 ? 1000/fps : 16;
+	GFX->m_ticks = g_step;
+	g_prev = tick_counter; g_accum = 0;
+	emscripten_set_main_loop(web_frame, 0, 1);   // rAF-driven; never returns
+#else
 	GAME->Loop(fps>0 ? 1000/fps : 16);
+#endif
 
 	CGrafics::DestroyInstance();
 	CGame::DestroyInstance();
