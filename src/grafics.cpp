@@ -73,10 +73,9 @@ int CGrafics::Init(int w, int h, int c, bool window)
 }
 
 void CGrafics::StartFrame(void)
-{	
-	m_ticks = tick_counter;
-	tick_counter =1;
-	
+{
+	// tick_counter is left free-running as a 1ms clock for CGame::Loop's
+	// fixed-timestep accumulator; m_ticks is set there to the sim step.
     acquire_bitmap(m_buffer);
 
 	clear_to_color(m_buffer, makecol(0,100,200));

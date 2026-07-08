@@ -35,7 +35,7 @@ public:
 	static void DestroyInstance(void);
 	BITMAP* GetBitmap(int id);
 	int Init(void);
-	void Loop(void);
+	void Loop(int step=16);
 	void Update(int ticks);
 	void Draw(void);
 	bool m_exit;

@@ -29,9 +29,13 @@ int main(int argc, const  char *argv[])
 		color=atoi(argv[c+1]);
 
 	GFX->Init(640,480,color,windowed);
-	
+
+	int fps=60;                                   // sim rate; movement speed scales with it
+	if(check(argc,argv,"-fps"))
+		fps=atoi(argv[c+1]);
+
 	GAME->Init();
-	GAME->Loop();
+	GAME->Loop(fps>0 ? 1000/fps : 16);
 
 	CGrafics::DestroyInstance();
 	CGame::DestroyInstance();

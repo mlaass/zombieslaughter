@@ -79,12 +79,32 @@ int CGame::Init(void)
 	return 0;
 }
 
-void CGame::Loop(void)
+extern volatile int tick_counter;   // 1ms free-running clock (defined in fps.h via grafics.cpp)
+
+void CGame::Loop(int step)
 {
+	// Fixed-timestep loop. The Verlet integrator (Integrate()) carries velocity
+	// as (pos-lpos), which is NOT scaled by dt, so it is only correct at a
+	// constant step. Uncapped on modern hardware it ran thousands of frames a
+	// second -> far too fast. Advance the simulation in fixed `step`-ms slices
+	// (default 16ms ~= 60Hz) and render whatever's left over.
+	// tick_counter free-runs at 1ms (Count_Ticks); StartFrame no longer resets it.
+	if(step < 1) step = 1;
+	GFX->m_ticks = step;                 // debug HUD shows the sim step
+	int prev = tick_counter, accum = 0;
 	while(!m_exit)
 	{
-		Update(GFX->m_ticks);
+		int now = tick_counter;
+		accum += now - prev;
+		prev = now;
+		if(accum > 250) accum = 250;     // don't spiral after a stall/breakpoint
+		while(accum >= step && !m_exit)
+		{
+			Update(step);
+			accum -= step;
+		}
 		Draw();
+		rest(1);                         // yield CPU instead of busy-spinning
 	}
 }
 int zombiespwn=1000, itemspwn=6000;
